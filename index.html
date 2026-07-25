@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CWA Target Calculator</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>CWA Target Calculator</h1>
+    <p class="subtitle">Find out what you need to score in each course this semester to hit your target CWA.</p>
+  </header>
+
+  <main class="container">
+    <section class="card" id="selection-card">
+      <h2>1. Select your semester</h2>
+
+      <div class="field">
+        <label for="programme-input">Programme</label>
+        <input list="programme-options" id="programme-input" placeholder="Search programme…" autocomplete="off" />
+        <datalist id="programme-options"></datalist>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="year-select">Year</label>
+          <select id="year-select" disabled>
+            <option value="">Select year</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="semester-select">Semester</label>
+          <select id="semester-select" disabled>
+            <option value="">Select semester</option>
+          </select>
+        </div>
+      </div>
+
+      <p id="catalog-status" class="status-text"></p>
+    </section>
+
+    <section class="card" id="courses-card" hidden>
+      <h2>2. Courses this semester</h2>
+      <p class="hint">Untick anything you're not actually taking, or add a course manually.</p>
+      <table id="course-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Code</th>
+            <th>Course</th>
+            <th>Credits</th>
+          </tr>
+        </thead>
+        <tbody id="course-table-body"></tbody>
+      </table>
+
+      <div class="add-course-row">
+        <input type="text" id="add-course-name" placeholder="Course name" />
+        <input type="number" id="add-course-credits" placeholder="Credits" min="1" max="6" />
+        <button type="button" id="add-course-btn">Add course</button>
+      </div>
+
+      <div class="prior-credits">
+        <span>Total prior credit hours (auto-calculated):</span>
+        <strong id="prior-credits-value">0</strong>
+      </div>
+    </section>
+
+    <section class="card" id="cwa-card" hidden>
+      <h2>3. Your CWA</h2>
+      <div class="field-row">
+        <div class="field">
+          <label for="prior-cwa-input">Previous cumulative CWA</label>
+          <input type="number" id="prior-cwa-input" min="0" max="100" step="0.01" placeholder="e.g. 68.50" />
+        </div>
+        <div class="field">
+          <label for="desired-cwa-input">Desired CWA</label>
+          <input type="number" id="desired-cwa-input" min="0" max="100" step="0.01" placeholder="e.g. 70.00" />
+        </div>
+      </div>
+      <button type="button" id="generate-btn" class="primary-btn">Generate Plan</button>
+      <p id="input-error" class="error-text"></p>
+    </section>
+
+    <section class="card" id="results-card" hidden>
+      <h2>4. Your plan</h2>
+      <div id="warnings"></div>
+
+      <p class="required-average">
+        Required average this semester: <strong id="required-average-value">—</strong>
+      </p>
+
+      <div class="plan-tabs" id="plan-tabs" role="tablist"></div>
+
+      <div class="plan" id="plan-panel">
+        <p class="hint" id="plan-description"></p>
+        <div id="plan-warnings"></div>
+        <table>
+          <thead><tr><th>Course</th><th>Credits</th><th>Target score</th></tr></thead>
+          <tbody id="plan-table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="download-row">
+        <button type="button" id="download-png-btn" class="secondary-btn">Download as PNG</button>
+        <button type="button" id="download-pdf-btn" class="secondary-btn">Download as PDF</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Course catalog: <span id="catalog-source">data/courses.csv</span></p>
+  </footer>
+
+  <script src="js/vendor/jspdf.umd.min.js"></script>
+  <script src="js/catalog.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/plan-export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
