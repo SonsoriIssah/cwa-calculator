@@ -18,8 +18,18 @@
 
       <div class="field">
         <label for="programme-input">Programme</label>
-        <input list="programme-options" id="programme-input" placeholder="Search programme…" autocomplete="off" />
-        <datalist id="programme-options"></datalist>
+        <div class="autocomplete">
+          <input
+            id="programme-input"
+            placeholder="Search programme…"
+            autocomplete="off"
+            role="combobox"
+            aria-expanded="false"
+            aria-controls="programme-dropdown"
+            aria-autocomplete="list"
+          />
+          <ul id="programme-dropdown" class="autocomplete-list" role="listbox" hidden></ul>
+        </div>
       </div>
 
       <div class="field-row">

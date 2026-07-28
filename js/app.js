@@ -6,6 +6,8 @@ let manualCourseCounter = 0;
 let currentSelection = { programme: "", year: null, semester: null };
 let latestResult = null; // last Calculator.generatePlans() output
 let activePlanKey = null;
+let programmeMatches = [];
+let programmeHighlight = -1;
 
 const el = (id) => document.getElementById(id);
 
@@ -18,17 +20,98 @@ async function init() {
   }
 
   const programmes = Catalog.getProgrammes(catalogData);
-  const datalist = el("programme-options");
-  datalist.innerHTML = programmes.map((p) => `<option value="${escapeHtml(p)}">`).join("");
   el("catalog-status").textContent = `${programmes.length} programme(s) loaded from catalog.`;
 
-  el("programme-input").addEventListener("input", onProgrammeChange);
+  const programmeInput = el("programme-input");
+  programmeInput.addEventListener("input", () => {
+    updateProgrammeDropdown();
+    onProgrammeChange();
+  });
+  programmeInput.addEventListener("focus", updateProgrammeDropdown);
+  programmeInput.addEventListener("keydown", onProgrammeKeydown);
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".autocomplete")) closeProgrammeDropdown();
+  });
+
   el("year-select").addEventListener("change", onYearChange);
   el("semester-select").addEventListener("change", onSemesterChange);
   el("add-course-btn").addEventListener("click", onAddCourse);
   el("generate-btn").addEventListener("click", onGeneratePlan);
   el("download-png-btn").addEventListener("click", onDownloadPng);
   el("download-pdf-btn").addEventListener("click", onDownloadPdf);
+}
+
+function updateProgrammeDropdown() {
+  const query = el("programme-input").value.trim().toLowerCase();
+  const programmes = Catalog.getProgrammes(catalogData);
+  programmeMatches = query ? programmes.filter((p) => p.toLowerCase().includes(query)) : programmes;
+  programmeHighlight = -1;
+  renderProgrammeDropdown();
+}
+
+function renderProgrammeDropdown() {
+  const dropdown = el("programme-dropdown");
+  const input = el("programme-input");
+
+  if (programmeMatches.length === 0) {
+    closeProgrammeDropdown();
+    return;
+  }
+
+  dropdown.innerHTML = programmeMatches
+    .map(
+      (p, i) => `
+      <li class="autocomplete-item${i === programmeHighlight ? " highlighted" : ""}" role="option" data-value="${escapeHtml(p)}">
+        ${escapeHtml(p)}
+      </li>`
+    )
+    .join("");
+  dropdown.hidden = false;
+  input.setAttribute("aria-expanded", "true");
+
+  dropdown.querySelectorAll(".autocomplete-item").forEach((li) => {
+    // mousedown (not click) fires before the input's blur, so the value is
+    // set before the dropdown gets torn down by the blur/outside-click handler.
+    li.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      selectProgramme(li.dataset.value);
+    });
+  });
+}
+
+function closeProgrammeDropdown() {
+  const dropdown = el("programme-dropdown");
+  dropdown.hidden = true;
+  dropdown.innerHTML = "";
+  el("programme-input").setAttribute("aria-expanded", "false");
+  programmeHighlight = -1;
+}
+
+function selectProgramme(name) {
+  el("programme-input").value = name;
+  closeProgrammeDropdown();
+  onProgrammeChange();
+}
+
+function onProgrammeKeydown(e) {
+  if (el("programme-dropdown").hidden && e.key !== "Escape") return;
+
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    programmeHighlight = Math.min(programmeHighlight + 1, programmeMatches.length - 1);
+    renderProgrammeDropdown();
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    programmeHighlight = Math.max(programmeHighlight - 1, 0);
+    renderProgrammeDropdown();
+  } else if (e.key === "Enter") {
+    if (programmeHighlight >= 0 && programmeMatches[programmeHighlight]) {
+      e.preventDefault();
+      selectProgramme(programmeMatches[programmeHighlight]);
+    }
+  } else if (e.key === "Escape") {
+    closeProgrammeDropdown();
+  }
 }
 
 function onProgrammeChange() {

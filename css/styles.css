@@ -64,6 +64,39 @@ input, select {
 
 input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 
+.autocomplete { position: relative; }
+.autocomplete input { width: 100%; }
+
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 20;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+}
+
+.autocomplete-item {
+  padding: 0.55rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.highlighted {
+  background: var(--bg);
+  color: var(--primary);
+}
+
 .hint { color: var(--muted); font-size: 0.85rem; margin-top: -0.5rem; }
 .status-text { color: var(--muted); font-size: 0.85rem; }
 .error-text { color: var(--danger); font-size: 0.85rem; min-height: 1.2em; }
