@@ -146,7 +146,7 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
   const warnings = [];
   if (avg === null) {
     warnings.push("No courses selected for this semester.");
-    return { requiredAverage: null, desiredCWA, plans: [], warnings };
+    return { requiredAverage: null, desiredCWA, newCredits, plans: [], warnings };
   }
   if (avg > HARD_CAP) {
     warnings.push(
@@ -220,7 +220,7 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
     ),
   ];
 
-  return { requiredAverage: avg, desiredCWA, plans, warnings };
+  return { requiredAverage: avg, desiredCWA, newCredits, plans, warnings };
 }
 
 window.Calculator = {

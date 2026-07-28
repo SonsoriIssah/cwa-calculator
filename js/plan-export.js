@@ -3,13 +3,13 @@
 // embeds it as an image via jsPDF (js/vendor/jspdf.umd.min.js).
 
 const EXPORT_COLORS = {
-  text: "#1c2230",
-  muted: "#6b7280",
-  border: "#e2e5eb",
-  headerBg: "#f6f7fb",
-  rowAltBg: "#fafbfd",
-  primary: "#2f5cf5",
-  danger: "#d9455f",
+  text: "#0d1c2d",
+  muted: "#454652",
+  border: "#c5c5d4",
+  headerBg: "#eef4ff",
+  rowAltBg: "#f8f9ff",
+  primary: "#24389c",
+  danger: "#ba1a1a",
   warn: "#b5720f",
 };
 

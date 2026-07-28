@@ -9,6 +9,8 @@ let activePlanKey = null;
 let programmeMatches = [];
 let programmeHighlight = -1;
 
+const RING_CIRCUMFERENCE = 527; // 2π × r(84), matches the SVG circle in index.html
+
 const el = (id) => document.getElementById(id);
 
 async function init() {
@@ -37,8 +39,20 @@ async function init() {
   el("semester-select").addEventListener("change", onSemesterChange);
   el("add-course-btn").addEventListener("click", onAddCourse);
   el("generate-btn").addEventListener("click", onGeneratePlan);
+  el("reset-btn").addEventListener("click", onReset);
   el("download-png-btn").addEventListener("click", onDownloadPng);
   el("download-pdf-btn").addEventListener("click", onDownloadPdf);
+
+  setStep(1);
+}
+
+function setStep(n) {
+  document.querySelectorAll(".step-chip").forEach((chip) => {
+    const s = Number(chip.dataset.step);
+    chip.classList.remove("done", "current");
+    if (s < n) chip.classList.add("done");
+    else if (s === n) chip.classList.add("current");
+  });
 }
 
 function updateProgrammeDropdown() {
@@ -123,6 +137,7 @@ function onProgrammeChange() {
   hide("courses-card");
   hide("cwa-card");
   hide("results-card");
+  setStep(1);
 
   if (years.length === 0) {
     yearSelect.disabled = true;
@@ -144,6 +159,7 @@ function onYearChange() {
   hide("courses-card");
   hide("cwa-card");
   hide("results-card");
+  setStep(1);
 
   if (!year) {
     semesterSelect.disabled = true;
@@ -167,6 +183,7 @@ function onSemesterChange() {
   if (!semester) {
     hide("courses-card");
     hide("cwa-card");
+    setStep(1);
     return;
   }
 
@@ -187,28 +204,41 @@ function onSemesterChange() {
 
   show("courses-card");
   show("cwa-card");
+  setStep(3);
 }
 
 function renderCourseTable() {
-  const tbody = el("course-table-body");
-  tbody.innerHTML = currentCourses
+  const container = el("course-table-body");
+  container.innerHTML = currentCourses
     .map(
       (c, i) => `
-      <tr>
-        <td><input type="checkbox" data-idx="${i}" class="course-toggle" ${c.included ? "checked" : ""}></td>
-        <td>${escapeHtml(c.course_code)}</td>
-        <td>${escapeHtml(c.course_name)}</td>
-        <td>${c.credits}</td>
-      </tr>`
+      <div class="flex items-center justify-between p-md bg-surface-container rounded-xl border border-outline-variant">
+        <div class="flex items-center gap-md">
+          <input type="checkbox" data-idx="${i}" class="course-toggle w-5 h-5 rounded text-primary focus:ring-primary" ${c.included ? "checked" : ""}>
+          <div>
+            <p class="font-label-md">${escapeHtml(c.course_name)}</p>
+            <p class="text-label-sm text-on-surface-variant">${escapeHtml(c.course_code)} · ${c.credits} Credit Hour${c.credits === 1 ? "" : "s"}</p>
+          </div>
+        </div>
+      </div>`
     )
     .join("");
 
-  tbody.querySelectorAll(".course-toggle").forEach((cb) => {
+  container.querySelectorAll(".course-toggle").forEach((cb) => {
     cb.addEventListener("change", (e) => {
       const idx = Number(e.target.dataset.idx);
       currentCourses[idx].included = e.target.checked;
+      updateCourseSummary();
     });
   });
+
+  updateCourseSummary();
+}
+
+function updateCourseSummary() {
+  const included = currentCourses.filter((c) => c.included);
+  const totalCredits = included.reduce((s, c) => s + c.credits, 0);
+  el("course-summary").textContent = `${included.length} course${included.length === 1 ? "" : "s"} · ${totalCredits} total credit hour${totalCredits === 1 ? "" : "s"}`;
 }
 
 function onAddCourse() {
@@ -264,10 +294,10 @@ function onGeneratePlan() {
     courses: includedCourses,
   });
 
-  renderResults(result);
+  renderResults(result, { priorCWA, priorCredits });
 }
 
-function renderResults(result) {
+function renderResults(result, { priorCWA, priorCredits }) {
   latestResult = result;
   activePlanKey = result.plans.length > 0 ? result.plans[0].key : null;
 
@@ -278,12 +308,25 @@ function renderResults(result) {
 
   el("desired-cwa-value").textContent = result.desiredCWA.toFixed(2);
   el("required-average-value").textContent =
-    result.requiredAverage === null ? "—" : result.requiredAverage.toFixed(2);
+    result.requiredAverage === null ? "—" : result.requiredAverage.toFixed(1);
+
+  const pct = result.requiredAverage === null ? 0 : Math.max(0, Math.min(1, result.requiredAverage / 100));
+  el("progress-ring-circle").setAttribute(
+    "stroke-dashoffset",
+    String(RING_CIRCUMFERENCE * (1 - pct))
+  );
+
+  const { programme, year, semester } = currentSelection;
+  el("stat-semester").textContent = `Yr ${year} Sem ${semester}`;
+  el("stat-credits").textContent = result.newCredits;
+  el("stat-current-cwa").textContent = priorCWA.toFixed(2);
+  el("stat-target-cwa").textContent = result.desiredCWA.toFixed(2);
 
   renderPlanTabs();
   renderActivePlan();
 
   show("results-card");
+  setStep(4);
 }
 
 function renderPlanTabs() {
@@ -334,13 +377,30 @@ function renderActivePlan() {
 
   el("plan-table-body").innerHTML = plan.courses
     .map((c) => {
-      const flaggedClass = c.capped ? "target-capped" : c.impossible || c.flagged ? "target-flagged" : "";
-      const label = c.impossible ? `${c.target}+` : c.capped ? `${c.target} (capped)` : c.target;
+      const barColor = c.impossible ? "bg-error" : c.capped ? "bg-amber-500" : "bg-primary";
+      const scoreClass = c.impossible || c.flagged ? "text-error font-bold" : c.capped ? "text-amber-600 font-bold" : "font-bold text-primary";
+      const rowBg = c.impossible ? "bg-error-container/10" : "";
+      const label = c.impossible ? `${c.target}+` : String(c.target);
+      const badge = c.impossible
+        ? `<div class="mt-1"><span class="bg-error text-on-error px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Unachievable</span></div>`
+        : c.capped
+        ? `<div class="mt-1"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Capped</span></div>`
+        : "";
+      const barPct = Math.max(0, Math.min(100, c.target));
+
       return `
-        <tr>
-          <td>${escapeHtml(c.course_name)}</td>
-          <td>${c.credits}</td>
-          <td class="${flaggedClass}">${label}</td>
+        <tr class="hover:bg-surface-bright transition-colors ${rowBg}">
+          <td class="px-lg py-md font-label-md">${escapeHtml(c.course_name)}</td>
+          <td class="px-lg py-md text-center">${c.credits}</td>
+          <td class="px-lg py-md text-right">
+            <span class="${scoreClass}">${label}</span>
+            ${badge}
+          </td>
+          <td class="px-lg py-md">
+            <div class="w-full bg-surface-variant h-2 rounded-full overflow-hidden">
+              <div class="${barColor} h-full" style="width:${barPct}%"></div>
+            </div>
+          </td>
         </tr>`;
     })
     .join("");
@@ -381,6 +441,27 @@ function onDownloadPdf() {
   const plan = getActivePlan();
   if (!plan) return;
   PlanExport.downloadPlanAsPdf(buildExportMeta(plan), exportFilename(plan, "pdf"));
+}
+
+function onReset() {
+  el("programme-input").value = "";
+  closeProgrammeDropdown();
+  resetDownstream(["year-select", "semester-select"]);
+  hide("courses-card");
+  hide("cwa-card");
+  hide("results-card");
+
+  currentCourses = [];
+  currentSelection = { programme: "", year: null, semester: null };
+  latestResult = null;
+  activePlanKey = null;
+
+  el("prior-cwa-input").value = "";
+  el("desired-cwa-input").value = "";
+  el("input-error").textContent = "";
+
+  setStep(1);
+  el("programme-input").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function resetDownstream(ids) {

@@ -91,11 +91,39 @@ file directly, no dialogs or new tabs:
 
 ## Known limitations
 
-The inverse-credit-weighting "spread" (`SPREAD_STRENGTH` in `calculator.js`)
-and the Safety plan's ceiling (`SAFETY_CAP`) are tunable constants, not
-derived from a KNUST-specified formula — there isn't one. Adjust them if the
-per-course spread feels too aggressive, too flat, or too strict once tested
-against real student expectations.
+- The inverse-credit-weighting "spread" (`SPREAD_STRENGTH` in `calculator.js`)
+  and the Safety plan's ceiling (`SAFETY_CAP`) are tunable constants, not
+  derived from a KNUST-specified formula — there isn't one. Adjust them if the
+  per-course spread feels too aggressive, too flat, or too strict once tested
+  against real student expectations.
+- The "Grade Scale Reference" table from the UI mockup this design is based on
+  was deliberately left out — `CWA Calculation.pdf` (the only source doc
+  available) only documents the CWA formula itself, not letter-grade bands, so
+  presenting made-up boundaries risked misinforming students about their
+  actual standing. Add it if you have a verified source.
+
+## UI
+
+Visual design follows a Material Design 3–style mockup: step-indicator wizard
+card, a progress ring for the required semester average, dashboard stat
+cards, and a per-course "relative effort" bar in the plan table.
+
+This pulled in three CDN dependencies the rest of the project deliberately
+avoided — **Tailwind CSS** (`cdn.tailwindcss.com`, JIT-compiles utility
+classes at runtime, including ones injected dynamically by `app.js`), Google
+Fonts (Hanken Grotesk / Atkinson Hyperlegible Next), and Material Symbols.
+The site now needs network access on every load for styling/fonts/icons —
+previously, everything but the first load of `data/courses.csv` worked
+offline. Tailwind's own docs warn against the CDN build in production (no
+purging, larger payload, a console warning at runtime); switching to a
+built/self-hosted Tailwind stylesheet (or hand-rolled CSS) would restore that,
+at the cost of losing the CDN's convenient JIT handling of dynamically
+generated classes.
+
+## Deployment
+
+Deployed on [Vercel](https://vercel.com) as a static site — no build step, no
+environment variables. Every push to `main` on GitHub redeploys automatically.
 
 ## Deployment
 
