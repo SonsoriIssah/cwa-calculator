@@ -193,6 +193,7 @@ function renderResults(result) {
     .map((w) => `<div class="warning-box">${escapeHtml(w)}</div>`)
     .join("");
 
+  el("desired-cwa-value").textContent = result.desiredCWA.toFixed(2);
   el("required-average-value").textContent =
     result.requiredAverage === null ? "—" : result.requiredAverage.toFixed(2);
 
@@ -237,6 +238,12 @@ function renderActivePlan() {
 
   el("plan-description").textContent = plan.description;
 
+  const projected = plan.projectedCumulativeCWA;
+  const projectedEl = el("projected-cwa-value");
+  const onTarget = projected !== null && Math.abs(projected - latestResult.desiredCWA) <= 0.1;
+  projectedEl.textContent = projected === null ? "—" : projected.toFixed(2);
+  projectedEl.className = projected === null ? "" : onTarget ? "on-target" : "off-target";
+
   const planWarningsEl = el("plan-warnings");
   planWarningsEl.innerHTML = plan.warnings
     .map((w) => `<div class="warning-box">${escapeHtml(w)}</div>`)
@@ -264,6 +271,9 @@ function buildExportMeta(plan) {
     description: plan.description,
     requiredAverageText:
       latestResult.requiredAverage === null ? "—" : latestResult.requiredAverage.toFixed(2),
+    desiredCwaText: latestResult.desiredCWA.toFixed(2),
+    projectedCwaText:
+      plan.projectedCumulativeCWA === null ? "—" : plan.projectedCumulativeCWA.toFixed(2),
     courses: plan.courses,
   };
 }

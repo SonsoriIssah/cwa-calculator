@@ -9,6 +9,8 @@
   --danger: #d9455f;
   --warn-bg: #fff4e5;
   --warn-border: #f2b96a;
+  --warn-text: #b5720f;
+  --success: #1a9e6a;
   --radius: 10px;
 }
 
@@ -96,8 +98,31 @@ th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: u
 .primary-btn:hover, #add-course-btn:hover { background: var(--primary-dark); }
 .primary-btn { width: 100%; margin-top: 0.5rem; }
 
-.required-average { font-size: 1rem; }
-.required-average strong { color: var(--primary); }
+.goal-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.goal-stat {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.goal-stat span { font-size: 0.8rem; color: var(--muted); }
+.goal-stat strong { font-size: 1.15rem; color: var(--primary); }
+
+.projected-cwa { font-size: 0.95rem; margin-top: 0.75rem; }
+.projected-cwa strong { font-size: 1.1rem; }
+.projected-cwa strong.on-target { color: var(--success); }
+.projected-cwa strong.off-target { color: var(--warn-text); }
 
 .plan-tabs {
   display: flex;

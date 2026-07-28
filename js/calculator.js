@@ -24,6 +24,15 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
+// The actual cumulative CWA a plan produces once its (rounded, possibly
+// capped) per-course targets are hit — as opposed to the semester-only
+// average, this is the number that answers "does this plan reach my goal?".
+function projectedCumulativeCWA(priorPoints, priorCredits, newCredits, courses) {
+  const achievedPoints = courses.reduce((s, c) => s + c.target * c.credits, 0);
+  const totalCredits = priorCredits + newCredits;
+  return totalCredits > 0 ? (priorPoints + achievedPoints) / totalCredits : null;
+}
+
 // Inverse-credit-weighted split: lower-credit courses absorb more of the swing
 // away from the required average; higher-credit courses stay closer to it.
 // By construction, Σ(credit_i * deviation_i) == 0, so the credit-weighted mean
@@ -126,6 +135,7 @@ function buildCappedPlan(requiredPoints, courses, capValue) {
 // course list, returns 3 alternative plans plus any warnings.
 function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
   const newCredits = courses.reduce((s, c) => s + c.credits, 0);
+  const priorPoints = priorCWA * priorCredits;
   const { requiredPoints, requiredAverage: avg } = requiredAverage(
     priorCWA,
     priorCredits,
@@ -136,7 +146,7 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
   const warnings = [];
   if (avg === null) {
     warnings.push("No courses selected for this semester.");
-    return { requiredAverage: null, plans: [], warnings };
+    return { requiredAverage: null, desiredCWA, plans: [], warnings };
   }
   if (avg > HARD_CAP) {
     warnings.push(
@@ -163,31 +173,54 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
     );
   }
 
+  const makePlan = (key, label, description, planCourses, planWarnings) => {
+    const projected = projectedCumulativeCWA(priorPoints, priorCredits, newCredits, planCourses);
+    const finalWarnings = [...planWarnings];
+    // Rounding whole-number targets can miss the exact desired CWA by a hair;
+    // only worth flagging if it's not already explained by a bigger warning.
+    if (planWarnings.length === 0 && projected !== null && Math.abs(projected - desiredCWA) > 0.1) {
+      const direction = projected < desiredCWA ? "just under" : "just over";
+      finalWarnings.push(
+        `Rounding whole-number targets lands this plan ${direction} your goal — projected cumulative CWA ${projected.toFixed(
+          2
+        )} vs. desired ${desiredCWA.toFixed(2)}.`
+      );
+    }
+    return {
+      key,
+      label,
+      description,
+      courses: planCourses,
+      projectedCumulativeCWA: projected,
+      warnings: finalWarnings,
+    };
+  };
+
   const plans = [
-    {
-      key: "balanced",
-      label: "Balanced Plan",
-      description: "Credit-weighted split — lower-credit courses swing further from the average, higher-credit courses stay closer to it.",
-      courses: balancedCourses,
-      warnings: [],
-    },
-    {
-      key: "equal",
-      label: "Equal Split Plan",
-      description: "The same target score in every course — simplest to aim for.",
-      courses: equalCourses,
-      warnings: [],
-    },
-    {
-      key: "safety",
-      label: "Safety Plan",
-      description: `No single course is ever targeted above ${SAFETY_CAP} — the shortfall is redistributed across the others.`,
-      courses: safetyResult.courses,
-      warnings: safetyWarnings,
-    },
+    makePlan(
+      "balanced",
+      "Balanced Plan",
+      "Credit-weighted split — lower-credit courses swing further from the average, higher-credit courses stay closer to it.",
+      balancedCourses,
+      []
+    ),
+    makePlan(
+      "equal",
+      "Equal Split Plan",
+      "The same target score in every course — simplest to aim for.",
+      equalCourses,
+      []
+    ),
+    makePlan(
+      "safety",
+      "Safety Plan",
+      `No single course is ever targeted above ${SAFETY_CAP} — the shortfall is redistributed across the others.`,
+      safetyResult.courses,
+      safetyWarnings
+    ),
   ];
 
-  return { requiredAverage: avg, plans, warnings };
+  return { requiredAverage: avg, desiredCWA, plans, warnings };
 }
 
 window.Calculator = {
@@ -195,6 +228,7 @@ window.Calculator = {
   splitTargets,
   equalSplit,
   buildCappedPlan,
+  projectedCumulativeCWA,
   generatePlans,
   HARD_CAP,
   SOFT_CAP,

@@ -87,14 +87,25 @@
       <h2>4. Your plan</h2>
       <div id="warnings"></div>
 
-      <p class="required-average">
-        Required average this semester: <strong id="required-average-value">—</strong>
-      </p>
+      <div class="goal-summary">
+        <div class="goal-stat">
+          <span>Your goal — cumulative CWA</span>
+          <strong id="desired-cwa-value">—</strong>
+        </div>
+        <div class="goal-stat">
+          <span>Required average this semester</span>
+          <strong id="required-average-value">—</strong>
+        </div>
+      </div>
 
       <div class="plan-tabs" id="plan-tabs" role="tablist"></div>
 
       <div class="plan" id="plan-panel">
         <p class="hint" id="plan-description"></p>
+        <p class="projected-cwa">
+          Projected cumulative CWA if you hit these targets:
+          <strong id="projected-cwa-value">—</strong>
+        </p>
         <div id="plan-warnings"></div>
         <table>
           <thead><tr><th>Course</th><th>Credits</th><th>Target score</th></tr></thead>

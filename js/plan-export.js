@@ -65,7 +65,7 @@ function renderPlanCanvas(meta) {
   }));
   const rowHeights = rows.map((r) => Math.max(1, r.lines.length) * lineHeight + rowPadding);
 
-  const headerBlockHeight = 150; // title + subtitle + plan label + description + required average
+  const headerBlockHeight = 190; // title + subtitle + plan label + description + 3 stat lines
   const tableHeaderHeight = 30;
   const tableHeight = rowHeights.reduce((s, h) => s + h, 0);
   const footerHeight = 40;
@@ -109,7 +109,13 @@ function renderPlanCanvas(meta) {
 
   ctx.font = "13px -apple-system, Segoe UI, Roboto, Arial, sans-serif";
   ctx.fillStyle = EXPORT_COLORS.text;
+  ctx.fillText(`Your goal — cumulative CWA: ${meta.desiredCwaText}`, padding, y);
+  y += 18;
   ctx.fillText(`Required average this semester: ${meta.requiredAverageText}`, padding, y);
+  y += 18;
+  ctx.fillStyle = EXPORT_COLORS.primary;
+  ctx.font = "700 13px -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+  ctx.fillText(`Projected cumulative CWA if you hit these targets: ${meta.projectedCwaText}`, padding, y);
   y += 20;
 
   // Table header
