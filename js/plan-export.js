@@ -109,13 +109,13 @@ function renderPlanCanvas(meta) {
 
   ctx.font = "13px -apple-system, Segoe UI, Roboto, Arial, sans-serif";
   ctx.fillStyle = EXPORT_COLORS.text;
-  ctx.fillText(`Your goal — cumulative CWA: ${meta.desiredCwaText}`, padding, y);
+  ctx.fillText(`Projected cumulative CWA: ${meta.desiredCwaText}`, padding, y);
   y += 18;
   ctx.fillText(`Required average this semester: ${meta.requiredAverageText}`, padding, y);
   y += 18;
   ctx.fillStyle = EXPORT_COLORS.primary;
   ctx.font = "700 13px -apple-system, Segoe UI, Roboto, Arial, sans-serif";
-  ctx.fillText(`Projected cumulative CWA if you hit these targets: ${meta.projectedCwaText}`, padding, y);
+  ctx.fillText(`Estimated cumulative CWA for this plan (after rounding): ${meta.projectedCwaText}`, padding, y);
   y += 20;
 
   // Table header

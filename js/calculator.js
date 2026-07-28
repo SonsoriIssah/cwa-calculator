@@ -150,13 +150,13 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
   }
   if (avg > HARD_CAP) {
     warnings.push(
-      `Target CWA is not achievable this semester even with 100 in every course (would need an average of ${avg.toFixed(
+      `Projected CWA is not achievable this semester even with 100 in every course (would need an average of ${avg.toFixed(
         1
       )}).`
     );
   } else if (avg < MIN_SCORE) {
     warnings.push(
-      "Target CWA is already exceeded by your prior CWA — no minimum average is required this semester."
+      "Projected CWA is already exceeded by your prior CWA — no minimum average is required this semester."
     );
   }
 
@@ -176,14 +176,14 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
   const makePlan = (key, label, description, planCourses, planWarnings) => {
     const projected = projectedCumulativeCWA(priorPoints, priorCredits, newCredits, planCourses);
     const finalWarnings = [...planWarnings];
-    // Rounding whole-number targets can miss the exact desired CWA by a hair;
+    // Rounding whole-number targets can miss the exact projected CWA by a hair;
     // only worth flagging if it's not already explained by a bigger warning.
     if (planWarnings.length === 0 && projected !== null && Math.abs(projected - desiredCWA) > 0.1) {
       const direction = projected < desiredCWA ? "just under" : "just over";
       finalWarnings.push(
-        `Rounding whole-number targets lands this plan ${direction} your goal — projected cumulative CWA ${projected.toFixed(
+        `Rounding whole-number targets lands this plan ${direction} your goal — estimated cumulative CWA ${projected.toFixed(
           2
-        )} vs. desired ${desiredCWA.toFixed(2)}.`
+        )} vs. projected ${desiredCWA.toFixed(2)}.`
       );
     }
     return {

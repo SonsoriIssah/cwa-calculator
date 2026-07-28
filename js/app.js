@@ -271,7 +271,7 @@ function onGeneratePlan() {
   const errorEl = el("input-error");
 
   if (!el("prior-cwa-input").value || !el("desired-cwa-input").value) {
-    errorEl.textContent = "Enter both your previous CWA and desired CWA.";
+    errorEl.textContent = "Enter both your previous CWA and projected cumulative CWA.";
     return;
   }
   if (priorCWA < 0 || priorCWA > 100 || desiredCWA < 0 || desiredCWA > 100) {

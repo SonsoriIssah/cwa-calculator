@@ -1,5 +1,15 @@
 // catalog.js — loads and filters the course catalog CSV (no external CSV lib dependency)
 
+// The master CSV abbreviates programme names (e.g. "Computer Eng."); shown in
+// full everywhere in the UI. Applied once at parse time so every downstream
+// lookup (getYears, getCourses, etc.) just matches on the full name.
+const PROGRAMME_DISPLAY_NAMES = {
+  "Computer Eng.": "Computer Engineering",
+  "Telecommunication Eng.": "Telecommunication Engineering",
+  "Biomedical Eng.": "Biomedical Engineering",
+  "Electrical/Electronic": "Electrical/Electronic Engineering",
+};
+
 async function loadCatalog(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to load catalog: ${res.status}`);
@@ -21,6 +31,7 @@ function parseCsv(text) {
     row.year = Number(row.year);
     row.semester = Number(row.semester);
     row.credits = Number(row.credits);
+    row.programme = PROGRAMME_DISPLAY_NAMES[row.programme] || row.programme;
     rows.push(row);
   }
   return rows;

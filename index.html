@@ -79,7 +79,7 @@
 
   <main class="max-w-container-max mx-auto px-4 md:px-lg py-xl">
     <section class="text-center mb-2xl">
-      <h1 class="font-display-lg text-display-lg text-primary mb-md">Plan Your Path to Your Target CWA</h1>
+      <h1 class="font-display-lg text-display-lg text-primary mb-md">Plan Your Path to Your Projected CWA</h1>
       <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
         Select your courses and see exactly what score each one needs to hit your cumulative CWA goal — with 3 alternative plans to choose from.
       </p>
@@ -177,8 +177,8 @@
               </div>
               <div class="space-y-sm">
                 <div class="flex items-center justify-between">
-                  <label class="font-label-md" for="desired-cwa-input">Desired CWA</label>
-                  <span class="material-symbols-outlined text-outline text-[16px] cursor-help" title="The cumulative CWA you want to reach after this semester">info</span>
+                  <label class="font-label-md" for="desired-cwa-input">Projected Cumulative CWA</label>
+                  <span class="material-symbols-outlined text-outline text-[16px] cursor-help" title="The cumulative CWA you're aiming to reach after this semester">info</span>
                 </div>
                 <input type="number" id="desired-cwa-input" min="0" max="100" step="0.01" placeholder="e.g. 70.00" class="w-full bg-surface border border-outline-variant rounded-lg px-md py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-center font-bold text-secondary" />
               </div>
@@ -215,7 +215,7 @@
                 <span class="text-label-sm text-on-surface-variant">Required Avg</span>
               </div>
             </div>
-            <p class="mt-md font-label-md text-on-surface-variant">Target cumulative CWA: <strong id="desired-cwa-value">—</strong></p>
+            <p class="mt-md font-label-md text-on-surface-variant">Projected cumulative CWA: <strong id="desired-cwa-value">—</strong></p>
           </div>
 
           <div class="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-md">
@@ -232,7 +232,7 @@
               <p class="font-headline-md text-primary" id="stat-current-cwa">—</p>
             </div>
             <div class="bg-white p-md rounded-xl shadow-sm border border-outline-variant">
-              <p class="text-label-sm text-on-surface-variant mb-xs">Target CWA</p>
+              <p class="text-label-sm text-on-surface-variant mb-xs">Projected CWA</p>
               <p class="font-headline-md text-secondary" id="stat-target-cwa">—</p>
             </div>
           </div>
@@ -245,7 +245,7 @@
         <div class="p-lg md:p-xl" id="plan-panel">
           <p class="text-on-surface-variant text-label-md mb-sm" id="plan-description"></p>
           <p class="text-label-md mb-md">
-            Projected cumulative CWA if you hit these targets:
+            Estimated cumulative CWA for this plan (after rounding):
             <strong id="projected-cwa-value">—</strong>
           </p>
           <div id="plan-warnings"></div>
