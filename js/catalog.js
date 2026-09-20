@@ -12,6 +12,8 @@ const PROGRAMME_DISPLAY_NAMES = {
   "Chemical Eng.": "Chemical Engineering",
   "Marine Eng.": "Marine Engineering",
   "Civil Eng.": "Civil Engineering",
+  "Agricultural Eng.": "Agricultural Engineering",
+  "Geological Eng.": "Geological Engineering",
 };
 
 async function loadCatalog(url) {
