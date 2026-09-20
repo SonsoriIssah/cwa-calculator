@@ -8,6 +8,10 @@ const PROGRAMME_DISPLAY_NAMES = {
   "Telecommunication Eng.": "Telecommunication Engineering",
   "Biomedical Eng.": "Biomedical Engineering",
   "Electrical/Electronic": "Electrical/Electronic Engineering",
+  "Mechanical Eng.": "Mechanical Engineering",
+  "Chemical Eng.": "Chemical Engineering",
+  "Marine Eng.": "Marine Engineering",
+  "Civil Eng.": "Civil Engineering",
 };
 
 async function loadCatalog(url) {
