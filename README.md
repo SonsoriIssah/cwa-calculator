@@ -61,7 +61,7 @@ See `js/calculator.js`. Answers to the open questions in the build plan
    taking, or add one manually (name + credits) if their registration differs.
 5. **Rounding:** CWA to 2 decimals, per-course targets to whole numbers.
 
-### The 3 plans
+### The 4 plans
 
 Generated every time, switchable via the tab bar above the results table:
 
@@ -74,6 +74,16 @@ Generated every time, switchable via the tab bar above the results table:
    course is ever asked for more than that ceiling. If the required average
    can't be reached while respecting the cap, the plan shows every course at
    the cap and warns that it's the closest achievable outcome.
+4. **Variable Plan** — starts identical to the Balanced plan, but every
+   target is an editable box. Type in the score you actually expect in any
+   course (e.g. "I can only get 70 in Calculus, not the 78 it suggests") and
+   `Calculator.buildVariablePlan()` re-splits the remaining courses
+   (inverse-credit-weighted, same as Balanced) across whatever points are
+   left, so the semester still adds up to the required total. Clear a box to
+   unlock that course back to automatic, or use "Reset to balanced" to clear
+   every lock at once. Unlike the other 3 plans, this one is computed live in
+   `app.js` (`getActivePlanMeta()`) rather than once in `generatePlans()`,
+   since it depends on state that changes after generation.
 
 ## Downloading a plan
 

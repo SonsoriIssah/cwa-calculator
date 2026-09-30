@@ -131,6 +131,47 @@ function buildCappedPlan(requiredPoints, courses, capValue) {
   return { courses: finalResults, achievable };
 }
 
+// Variable Plan: the student overrides one or more courses with a score they
+// believe they can actually hit (`lockedScores`: {course_code: score}); every
+// other course is re-split (inverse-credit-weighted, same as the Balanced
+// plan) across whatever points remain, so the semester as a whole still adds
+// up to `requiredPoints`. With no locks this is identical to the Balanced plan.
+function buildVariablePlan(requiredPoints, courses, lockedScores) {
+  const lockedCourses = courses.filter((c) => Object.prototype.hasOwnProperty.call(lockedScores, c.course_code));
+  const unlockedCourses = courses.filter((c) => !Object.prototype.hasOwnProperty.call(lockedScores, c.course_code));
+
+  const lockedPoints = lockedCourses.reduce((s, c) => s + lockedScores[c.course_code] * c.credits, 0);
+  const remainingPoints = requiredPoints - lockedPoints;
+  const remainingCredits = unlockedCourses.reduce((s, c) => s + c.credits, 0);
+
+  const lockedResults = lockedCourses.map((c) => ({ ...annotate(c, lockedScores[c.course_code]), locked: true }));
+
+  let unlockedResults = [];
+  let achievable = true;
+  let remainingAvg = null;
+
+  if (unlockedCourses.length > 0) {
+    remainingAvg = remainingCredits > 0 ? remainingPoints / remainingCredits : null;
+    if (remainingAvg === null || remainingAvg > HARD_CAP || remainingAvg < MIN_SCORE) {
+      achievable = false;
+    }
+    const clamped = clamp(remainingAvg ?? 0, MIN_SCORE, HARD_CAP);
+    unlockedResults = splitTargets(clamped, unlockedCourses).map((c) => ({ ...c, locked: false }));
+  } else if (Math.abs(remainingPoints) > 0.01) {
+    // Every course locked, but the locked scores don't add up to the target.
+    achievable = false;
+  }
+
+  const combined = [...lockedResults, ...unlockedResults];
+  combined.sort(
+    (a, b) =>
+      courses.findIndex((c) => c.course_code === a.course_code) -
+      courses.findIndex((c) => c.course_code === b.course_code)
+  );
+
+  return { courses: combined, achievable, remainingAvg };
+}
+
 // Top-level entry point: given the student's inputs and this semester's
 // course list, returns 3 alternative plans plus any warnings.
 function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
@@ -146,7 +187,7 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
   const warnings = [];
   if (avg === null) {
     warnings.push("No courses selected for this semester.");
-    return { requiredAverage: null, desiredCWA, newCredits, plans: [], warnings };
+    return { requiredAverage: null, requiredPoints, desiredCWA, newCredits, plans: [], warnings };
   }
   if (avg > HARD_CAP) {
     warnings.push(
@@ -218,9 +259,16 @@ function generatePlans({ priorCWA, priorCredits, desiredCWA, courses }) {
       safetyResult.courses,
       safetyWarnings
     ),
+    makePlan(
+      "variable",
+      "Variable Plan",
+      "Starts as the Balanced plan — type in the score you actually expect in any course and the rest adjust automatically to keep your projected CWA on target.",
+      balancedCourses.map((c) => ({ ...c, locked: false })),
+      []
+    ),
   ];
 
-  return { requiredAverage: avg, desiredCWA, newCredits, plans, warnings };
+  return { requiredAverage: avg, requiredPoints, desiredCWA, newCredits, plans, warnings };
 }
 
 window.Calculator = {
@@ -228,6 +276,7 @@ window.Calculator = {
   splitTargets,
   equalSplit,
   buildCappedPlan,
+  buildVariablePlan,
   projectedCumulativeCWA,
   generatePlans,
   HARD_CAP,

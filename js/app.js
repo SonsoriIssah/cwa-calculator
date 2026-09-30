@@ -9,6 +9,12 @@ let activePlanKey = null;
 let programmeMatches = [];
 let programmeHighlight = -1;
 
+// Variable Plan state — recomputed live from these, never stored in latestResult.
+let latestIncludedCourses = [];
+let latestPriorCWA = 0;
+let latestPriorCredits = 0;
+let variableLockedScores = {}; // {course_code: score}
+
 const RING_CIRCUMFERENCE = 527; // 2π × r(84), matches the SVG circle in index.html
 
 const el = (id) => document.getElementById(id);
@@ -40,6 +46,7 @@ async function init() {
   el("add-course-btn").addEventListener("click", onAddCourse);
   el("generate-btn").addEventListener("click", onGeneratePlan);
   el("reset-btn").addEventListener("click", onReset);
+  el("variable-plan-reset-btn").addEventListener("click", onVariablePlanReset);
   el("download-png-btn").addEventListener("click", onDownloadPng);
   el("download-pdf-btn").addEventListener("click", onDownloadPdf);
 
@@ -294,6 +301,11 @@ function onGeneratePlan() {
     courses: includedCourses,
   });
 
+  latestIncludedCourses = includedCourses;
+  latestPriorCWA = priorCWA;
+  latestPriorCredits = priorCredits;
+  variableLockedScores = {};
+
   renderResults(result, { priorCWA, priorCredits });
 }
 
@@ -358,9 +370,52 @@ function getActivePlan() {
   return latestResult.plans.find((p) => p.key === activePlanKey) || null;
 }
 
-function renderActivePlan() {
+// For every plan except the Variable Plan, the static plan object from
+// generatePlans() already has everything needed. The Variable Plan's courses
+// depend on variableLockedScores, which changes after generatePlans() ran, so
+// it's recomputed live from Calculator.buildVariablePlan() on every render.
+function getActivePlanMeta() {
   const plan = getActivePlan();
+  if (!plan) return null;
+  if (plan.key !== "variable") return plan;
+
+  const result = Calculator.buildVariablePlan(latestResult.requiredPoints, latestIncludedCourses, variableLockedScores);
+  const priorPoints = latestPriorCWA * latestPriorCredits;
+  const projected = Calculator.projectedCumulativeCWA(
+    priorPoints,
+    latestPriorCredits,
+    latestResult.newCredits,
+    result.courses
+  );
+
+  const warnings = [];
+  if (!result.achievable) {
+    warnings.push(
+      result.remainingAvg === null
+        ? "These locked scores don't add up to your projected CWA — adjust one of them."
+        : `Can't reach your projected CWA with these locked scores — the remaining courses would need an average of ${result.remainingAvg.toFixed(
+            1
+          )}.`
+    );
+  }
+
+  return {
+    key: plan.key,
+    label: plan.label,
+    description: plan.description,
+    courses: result.courses,
+    projectedCumulativeCWA: projected,
+    warnings,
+  };
+}
+
+function renderActivePlan() {
+  const plan = getActivePlanMeta();
   if (!plan) return;
+
+  const isVariable = plan.key === "variable";
+  el("variable-plan-hint").hidden = !isVariable;
+  el("variable-plan-reset-btn").hidden = !isVariable;
 
   el("plan-description").textContent = plan.description;
 
@@ -375,35 +430,87 @@ function renderActivePlan() {
     .map((w) => `<div class="warning-box">${escapeHtml(w)}</div>`)
     .join("");
 
-  el("plan-table-body").innerHTML = plan.courses
-    .map((c) => {
-      const barColor = c.impossible ? "bg-error" : c.capped ? "bg-amber-500" : "bg-primary";
-      const scoreClass = c.impossible || c.flagged ? "text-error font-bold" : c.capped ? "text-amber-600 font-bold" : "font-bold text-primary";
-      const rowBg = c.impossible ? "bg-error-container/10" : "";
-      const label = c.impossible ? `${c.target}+` : String(c.target);
-      const badge = c.impossible
-        ? `<div class="mt-1"><span class="bg-error text-on-error px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Unachievable</span></div>`
-        : c.capped
-        ? `<div class="mt-1"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Capped</span></div>`
-        : "";
-      const barPct = Math.max(0, Math.min(100, c.target));
+  el("plan-table-body").innerHTML = plan.courses.map((c) => renderPlanRow(c, isVariable)).join("");
 
-      return `
-        <tr class="hover:bg-surface-bright transition-colors ${rowBg}">
-          <td class="px-lg py-md font-label-md">${escapeHtml(c.course_name)}</td>
-          <td class="px-lg py-md text-center">${c.credits}</td>
-          <td class="px-lg py-md text-right">
-            <span class="${scoreClass}">${label}</span>
-            ${badge}
-          </td>
-          <td class="px-lg py-md">
-            <div class="w-full bg-surface-variant h-2 rounded-full overflow-hidden">
-              <div class="${barColor} h-full" style="width:${barPct}%"></div>
-            </div>
-          </td>
-        </tr>`;
-    })
-    .join("");
+  if (isVariable) wireVariableInputs();
+}
+
+function renderPlanRow(c, isVariable) {
+  const barColor = c.impossible ? "bg-error" : c.capped ? "bg-amber-500" : "bg-primary";
+  const rowBg = c.impossible ? "bg-error-container/10" : "";
+  const barPct = Math.max(0, Math.min(100, c.target));
+
+  let scoreCell;
+  if (isVariable) {
+    const inputBorder = c.locked
+      ? "border-primary text-primary"
+      : c.impossible || c.flagged
+      ? "border-error text-error"
+      : "border-outline-variant text-on-surface";
+    const hint = c.locked
+      ? `<span class="block text-label-sm text-primary mt-1">your input</span>`
+      : c.impossible
+      ? `<span class="block text-label-sm text-error mt-1">unachievable</span>`
+      : `<span class="block text-label-sm text-on-surface-variant mt-1">auto</span>`;
+    scoreCell = `
+      <input type="number" min="0" max="100" step="1" value="${c.target}"
+        data-course-code="${escapeHtml(c.course_code)}"
+        class="variable-score-input w-20 text-right font-bold rounded-lg border ${inputBorder} px-2 py-1 focus:ring-2 focus:ring-primary/20 outline-none" />
+      ${hint}`;
+  } else {
+    const scoreClass = c.impossible || c.flagged ? "text-error font-bold" : c.capped ? "text-amber-600 font-bold" : "font-bold text-primary";
+    const label = c.impossible ? `${c.target}+` : String(c.target);
+    const badge = c.impossible
+      ? `<div class="mt-1"><span class="bg-error text-on-error px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Unachievable</span></div>`
+      : c.capped
+      ? `<div class="mt-1"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Capped</span></div>`
+      : "";
+    scoreCell = `<span class="${scoreClass}">${label}</span>${badge}`;
+  }
+
+  return `
+    <tr class="hover:bg-surface-bright transition-colors ${rowBg}">
+      <td class="px-lg py-md font-label-md">${escapeHtml(c.course_name)}</td>
+      <td class="px-lg py-md text-center">${c.credits}</td>
+      <td class="px-lg py-md text-right">${scoreCell}</td>
+      <td class="px-lg py-md">
+        <div class="w-full bg-surface-variant h-2 rounded-full overflow-hidden">
+          <div class="${barColor} h-full" style="width:${barPct}%"></div>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function wireVariableInputs() {
+  el("plan-table-body").querySelectorAll(".variable-score-input").forEach((input) => {
+    const commit = () => onVariableScoreCommit(input.dataset.courseCode, input.value);
+    input.addEventListener("change", commit);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        input.blur(); // triggers "change", which commits and re-renders
+      }
+    });
+  });
+}
+
+// Committed (not per-keystroke, so the user isn't kicked out of the field
+// mid-type) on blur/Enter. An empty box unlocks that course back to auto.
+function onVariableScoreCommit(courseCode, rawValue) {
+  const trimmed = String(rawValue).trim();
+  if (trimmed === "") {
+    delete variableLockedScores[courseCode];
+  } else {
+    const value = Number(trimmed);
+    if (Number.isNaN(value)) return;
+    variableLockedScores[courseCode] = Math.round(Math.max(0, Math.min(100, value)));
+  }
+  renderActivePlan();
+}
+
+function onVariablePlanReset() {
+  variableLockedScores = {};
+  renderActivePlan();
 }
 
 function buildExportMeta(plan) {
@@ -431,14 +538,14 @@ function exportFilename(plan, extension) {
 }
 
 function onDownloadPng() {
-  const plan = getActivePlan();
+  const plan = getActivePlanMeta();
   if (!plan) return;
   const canvas = PlanExport.renderPlanCanvas(buildExportMeta(plan));
   PlanExport.downloadCanvasAsPng(canvas, exportFilename(plan, "png"));
 }
 
 function onDownloadPdf() {
-  const plan = getActivePlan();
+  const plan = getActivePlanMeta();
   if (!plan) return;
   PlanExport.downloadPlanAsPdf(buildExportMeta(plan), exportFilename(plan, "pdf"));
 }
@@ -455,6 +562,10 @@ function onReset() {
   currentSelection = { programme: "", year: null, semester: null };
   latestResult = null;
   activePlanKey = null;
+  latestIncludedCourses = [];
+  latestPriorCWA = 0;
+  latestPriorCredits = 0;
+  variableLockedScores = {};
 
   el("prior-cwa-input").value = "";
   el("desired-cwa-input").value = "";

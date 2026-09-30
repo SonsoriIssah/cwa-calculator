@@ -243,7 +243,15 @@
         <div class="flex border-b border-outline-variant overflow-x-auto" id="plan-tabs" role="tablist"></div>
 
         <div class="p-lg md:p-xl" id="plan-panel">
-          <p class="text-on-surface-variant text-label-md mb-sm" id="plan-description"></p>
+          <div class="flex items-start justify-between gap-md mb-sm">
+            <p class="text-on-surface-variant text-label-md">
+              <span id="plan-description"></span>
+              <span id="variable-plan-hint" class="block text-label-sm mt-xs" hidden>
+                Type a score into any course, then press Enter or click away — the rest recalculate automatically. Clear a box to let it go back to automatic.
+              </span>
+            </p>
+            <button type="button" id="variable-plan-reset-btn" class="text-primary text-label-sm font-bold whitespace-nowrap hover:underline" hidden>Reset to balanced</button>
+          </div>
           <p class="text-label-md mb-md">
             Estimated cumulative CWA for this plan (after rounding):
             <strong id="projected-cwa-value">—</strong>
