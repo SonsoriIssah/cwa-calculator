@@ -19,11 +19,14 @@ Then open `http://localhost:8000`.
 ```
 CWA Calculator/
 ├── index.html
+├── manifest.json        PWA manifest ("Add to Home Screen")
+├── sw.js                service worker (installability + best-effort caching)
+├── icons/               app icons (192/512/maskable/apple-touch/favicon)
 ├── css/styles.css
 ├── js/
-│   ├── app.js               DOM wiring (incl. plan tabs)
+│   ├── app.js               DOM wiring (incl. plan tabs, PWA install/hint)
 │   ├── catalog.js           loads + filters data/courses.csv (dependency-free CSV parser)
-│   ├── calculator.js        CWA math + per-course target splitting (3 plans)
+│   ├── calculator.js        CWA math + per-course target splitting (4 plans)
 │   ├── plan-export.js       PNG (canvas) / PDF (jsPDF) export
 │   └── vendor/jspdf.umd.min.js
 └── data/courses.csv    course catalog (copy from Tool 1's master export)
@@ -130,10 +133,29 @@ built/self-hosted Tailwind stylesheet (or hand-rolled CSS) would restore that,
 at the cost of losing the CDN's convenient JIT handling of dynamically
 generated classes.
 
-## Deployment
+## Installing as an app (Android / iPhone)
 
-Deployed on [Vercel](https://vercel.com) as a static site — no build step, no
-environment variables. Every push to `main` on GitHub redeploys automatically.
+The site is a installable PWA — `manifest.json` + `sw.js` + the icons in
+`icons/`:
+
+- **Android/Chrome/Edge:** the browser shows its own install prompt (address
+  bar icon, or the automatic mini-infobar) once the install criteria are met;
+  there's also an in-page "Install App" button (nav bar) that appears when the
+  browser fires `beforeinstallprompt` and calls its `.prompt()`.
+- **iPhone/iPad:** iOS Safari has no install-prompt API — the only way is
+  Share → Add to Home Screen, done manually. A one-time dismissible banner
+  says so on iOS visits; the dismissal is remembered in `localStorage`.
+- **`sw.js`** exists mainly to satisfy Chrome's install requirement (an active
+  service worker with a fetch handler). It precaches the app's own files
+  (HTML/CSS/JS/icons/`data/courses.csv`) network-first, falling back to cache
+  when offline — best-effort, not a guarantee: Tailwind, Google Fonts and
+  Material Symbols are still loaded from CDNs (see "UI" above) and need a
+  connection regardless.
+- **Icons** (`icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`,
+  `apple-touch-icon.png`, `favicon-32.png`) are a plain graduation-cap + "CWA"
+  wordmark, generated on a `<canvas>` (same technique as the plan PNG export)
+  since no local image-editing tool was available — replace them with a real
+  logo whenever you have one.
 
 ## Deployment
 

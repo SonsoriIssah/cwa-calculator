@@ -20,6 +20,8 @@ const RING_CIRCUMFERENCE = 527; // 2π × r(84), matches the SVG circle in index
 const el = (id) => document.getElementById(id);
 
 async function init() {
+  initPwa();
+
   try {
     catalogData = await Catalog.loadCatalog("data/courses.csv");
   } catch (err) {
@@ -51,6 +53,76 @@ async function init() {
   el("download-pdf-btn").addEventListener("click", onDownloadPdf);
 
   setStep(1);
+}
+
+// Registers the service worker (needed for Chrome/Android's install
+// criteria), wires the "Install App" button for browsers that support the
+// beforeinstallprompt flow (Chrome/Edge/Android), and shows a one-time
+// dismissible hint on iOS, which has no install prompt API — Safari only
+// supports Share → Add to Home Screen, done manually by the user.
+function initPwa() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((err) => {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
+
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+  if (isStandalone) return; // already installed/running as an app — nothing to offer
+
+  let deferredInstallPrompt = null;
+  const installBtn = el("install-app-btn");
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    installBtn.hidden = true;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    installBtn.hidden = true;
+  });
+
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const dismissed = safeLocalStorageGet("ios-install-hint-dismissed") === "1";
+  if (isIos && !dismissed) {
+    const hint = el("ios-install-hint");
+    hint.hidden = false;
+    el("ios-install-hint-dismiss").addEventListener("click", () => {
+      hint.hidden = true;
+      safeLocalStorageSet("ios-install-hint-dismissed", "1");
+    });
+  }
+}
+
+// localStorage can throw (private browsing, blocked site data, etc.) — this
+// hint is a minor convenience, never worth breaking the page over.
+function safeLocalStorageGet(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
 }
 
 function setStep(n) {

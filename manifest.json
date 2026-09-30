@@ -1,0 +1,16 @@
+{
+  "name": "CWA Target Calculator",
+  "short_name": "CWA Calc",
+  "description": "Plan the per-course scores you need this semester to hit your target cumulative CWA.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f9ff",
+  "theme_color": "#24389c",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

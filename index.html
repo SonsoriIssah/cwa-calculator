@@ -2,8 +2,20 @@
 <html class="scroll-smooth" lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>CWA Target Calculator</title>
+
+<!-- PWA / "Add to Home Screen" -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#24389c" />
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<!-- iOS ignores manifest.json; these are what makes "Add to Home Screen" behave like an app there. -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="CWA Calc" />
+<meta name="mobile-web-app-capable" content="yes" />
+
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -71,17 +83,27 @@
 <body class="bg-background text-on-surface font-body-md selection:bg-secondary-container">
 
   <nav class="sticky top-0 w-full z-50 flex justify-center items-center px-4 md:px-lg bg-surface-bright shadow-sm h-16">
-    <div class="max-w-container-max w-full flex items-center gap-2 font-headline-lg text-primary">
-      <span class="material-symbols-outlined">school</span>
-      <span class="font-bold tracking-tight">CWA Target Calculator</span>
+    <div class="max-w-container-max w-full flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 font-headline-lg text-primary">
+        <span class="material-symbols-outlined">school</span>
+        <span class="font-bold tracking-tight">CWA Target Calculator</span>
+      </div>
+      <button type="button" id="install-app-btn" hidden class="flex items-center gap-1 bg-primary text-white text-label-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/90 transition-all whitespace-nowrap">
+        <span class="material-symbols-outlined text-[18px]">add_to_home_screen</span> Install App
+      </button>
     </div>
   </nav>
+
+  <div id="ios-install-hint" hidden class="bg-primary text-white text-label-sm px-4 py-2 flex items-center justify-center gap-3 text-center">
+    <span>Add this to your Home Screen: tap <strong>Share</strong> <span class="material-symbols-outlined align-middle text-[16px]">ios_share</span>, then <strong>Add to Home Screen</strong>.</span>
+    <button type="button" id="ios-install-hint-dismiss" class="material-symbols-outlined text-[18px] shrink-0" aria-label="Dismiss">close</button>
+  </div>
 
   <main class="max-w-container-max mx-auto px-4 md:px-lg py-xl">
     <section class="text-center mb-2xl">
       <h1 class="font-display-lg text-display-lg text-primary mb-md">Plan Your Path to Your Projected CWA</h1>
       <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
-        Select your courses and see exactly what score each one needs to hit your cumulative CWA goal — with 3 alternative plans to choose from.
+        Select your courses and see exactly what score each one needs to hit your cumulative CWA goal — with 4 alternative plans to choose from.
       </p>
     </section>
 
